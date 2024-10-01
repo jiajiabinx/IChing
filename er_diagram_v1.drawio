@@ -218,8 +218,8 @@
             <mxPoint x="880" y="520" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="MUsphGuOdu-jn4XWuw0r-3" value="total" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
-          <mxGeometry x="850" y="475" width="50" height="30" as="geometry" />
+        <mxCell id="MUsphGuOdu-jn4XWuw0r-3" value="Total" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="880" y="505" width="50" height="30" as="geometry" />
         </mxCell>
         <mxCell id="MUsphGuOdu-jn4XWuw0r-4" value="" style="endArrow=none;dashed=1;html=1;rounded=0;" parent="1" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
