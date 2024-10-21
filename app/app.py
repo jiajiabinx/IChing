@@ -2,8 +2,8 @@ from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
-from backend import schemas, models
-from backend.database import SessionLocal
+from app import schemas, models
+from app.database import SessionLocal
 
 
 app = FastAPI()
