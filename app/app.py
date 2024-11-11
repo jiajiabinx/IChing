@@ -22,38 +22,23 @@ def get_db():
 app.mount("/static", StaticFiles(directory="build/static"), name="static")
 
 # Set up Jinja2 templates
-templates = Jinja2Templates(directory="build")
+templates = Jinja2Templates(directory="templates")
 
 
 @app.get("/")
 async def serve_frontend(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# @app.post("/api/submit_form")
-# async def submit_form(
-#     dob: str = Form(...),
-#     pronouns: str = Form(...),
-#     education: str = Form(...),
-#     institutions: str = Form(...),
-#     parents_professions: str = Form(...),
-#     file: Optional[UploadFile] = File(None)
-# ):
-#     form_data = FormData(
-#         dob=dob,
-#         pronouns=pronouns,
-#         education=education,
-#         institutions=institutions,
-#         parents_professions=parents_professions
-#     )
-    
-#     # Here you would typically save the form_data to a database
-#     print(f"Received form data: {form_data}")
-    
-#     if file:
-#         # Here you would typically save the file to a storage system
-#         print(f"Received file: {file.filename}")
-    
-#     return {"message": "Form submitted successfully"}
+
+@app.put("/api/users")
+async def create_user(user: schemas.Users, db: Session = Depends(get_db)):
+    db_user = models.Users(**user.model_dump())
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return {"message": "User created successfully"}
+
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

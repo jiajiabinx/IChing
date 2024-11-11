@@ -80,6 +80,7 @@ class PaidBy(IChingBaseModel):
     session_id: int
 
 
+#Jia 
 class InitiatedTransaction(IChingBaseModel):
     session_id: int
     transaction_id: str
