@@ -7,7 +7,7 @@ router = APIRouter(
 )
 
 @router.post("/")
-async def record_payment(payment: schemas.PaidBy):
+async def record_payment(payment: schemas.CompletedPayment):
     try:
         models.record_payment(payment.user_id, payment.order_id, payment.session_id)
         return {"message": "Payment recorded successfully"}
