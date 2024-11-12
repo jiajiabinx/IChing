@@ -7,7 +7,7 @@ from datetime import date, datetime
 
 class IChingBaseModel(BaseModel):
     class Config:
-        orm_mode = False    
+        from_attributes = False    
 
 
 class Users(IChingBaseModel):

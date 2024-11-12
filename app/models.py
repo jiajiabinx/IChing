@@ -1,5 +1,7 @@
 from .database import get_db_connection
 
+import json
+
 def insert_user(user_data):
     query = """
     INSERT INTO Users (birth_date, birth_location, primary_residence, current_location,
@@ -116,3 +118,26 @@ def record_payment(user_id, order_id, session_id):
         with conn.cursor() as cursor:
             cursor.execute(query, (user_id, order_id, session_id))
             conn.commit()
+            
+def yun_suan(user_data, count = 3):
+    query = """
+    SELECT *
+        FROM wiki_reference
+        ORDER BY RANDOM()
+        LIMIT %s;
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query, (count,))
+            references = cursor.fetchall()
+    return references
+    
+def record_APICall(user, references, transaction_data):
+    query = """
+    INSERT INTO APICall (user_id, references, transaction_data)
+    VALUES (%s, %s, %s);
+    """
+    references_str = json.dumps(references)
+    user_str = json.dumps(user)
+    prompt = 'Create a story based on the following historical figures: ' + references_str + ' and the biography of the following person: ' + user_str
+    

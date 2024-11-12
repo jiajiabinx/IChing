@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 import uvicorn
 import random
 from app.routers import users, friends, orders, payments
+import asyncio
 
 app = FastAPI()
 
@@ -42,8 +43,11 @@ HISTORICAL_FIGURES = [
 async def serve_frontend(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
+
+
 @app.get("/confirm")
-async def show_payment_confirmation(request: Request):
+async def payment_confirmation(request: Request):
     return templates.TemplateResponse(
         "payment_confirm.html",
         {"request": request, "amount": 5.00}
@@ -53,10 +57,13 @@ async def show_payment_confirmation(request: Request):
 async def process_payment(request: Request):
     # In a real application, you would process the payment here
     # For now, we'll just redirect to the story page
-    return {"redirect_url": "/payment-flow/story"}
+    return {"redirect_url": "/story"}
 
 @app.get("/story")
 async def show_story(request: Request):
+    # Simulate some loading time (you can remove this in production)
+    await asyncio.sleep(5)
+    
     # Randomly select 3 historical figures
     selected_figures = random.sample(HISTORICAL_FIGURES, 3)
     return templates.TemplateResponse(
@@ -73,5 +80,6 @@ app.include_router(friends.router)
 app.include_router(orders.router)
 app.include_router(payments.router)
 
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
