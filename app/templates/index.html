@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Project Frontend</title>
+</head>
+<body>
+    <h1>User and Payment Management</h1>
+
+    <!-- Create User Form -->
+    <h2>Create User</h2>
+    <form id="createUserForm">
+        <input type="text" name="birth_date" placeholder="Birth Date" required />
+        <input type="text" name="birth_location" placeholder="Birth Location" required />
+        <!-- Add other fields as needed -->
+        <button type="submit">Create User</button>
+    </form>
+
+    <!-- Create Order Form -->
+    <h2>Create Order</h2>
+    <form id="createOrderForm">
+        <input type="number" name="user_id" placeholder="User ID" required />
+        <input type="number" name="amount" placeholder="Order Amount" required />
+        <button type="submit">Create Order</button>
+    </form>
+
+    <!-- Add Friend Form -->
+    <h2>Add Friend</h2>
+    <form id="addFriendForm">
+        <input type="number" name="user_id_left" placeholder="User ID Left" required />
+        <input type="number" name="user_id_right" placeholder="User ID Right" required />
+        <button type="submit">Add Friend</button>
+    </form>
+
+    <!-- Record Payment Form -->
+    <h2>Record Payment</h2>
+    <form id="recordPaymentForm">
+        <input type="number" name="user_id" placeholder="User ID" required />
+        <input type="number" name="order_id" placeholder="Order ID" required />
+        <button type="submit">Record Payment and Start Session</button>
+    </form>
+
+    <!-- Check Order Status Form -->
+    <h2>Check Order Status</h2>
+    <form id="checkOrderStatusForm">
+        <input type="number" name="user_id" placeholder="User ID" required />
+        <button type="submit">Check Order Status</button>
+    </form>
+
+    <script>
+        // Create User
+        document.getElementById('createUserForm').onsubmit = async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            const response = await fetch('/api/users', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            alert(result.message);
+        };
+
+        // Create Order
+        document.getElementById('createOrderForm').onsubmit = async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            alert(result.message);
+        };
+
+        // Add Friend
+        document.getElementById('addFriendForm').onsubmit = async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            const response = await fetch(`/api/friends?user_id_left=${data.user_id_left}&user_id_right=${data.user_id_right}`, {
+                method: 'POST',
+            });
+            const result = await response.json();
+            alert(result.message);
+        };
+
+        // Record Payment and Start Session
+        document.getElementById('recordPaymentForm').onsubmit = async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            const response = await fetch('/api/payments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (response.ok) {
+                alert(`${result.message}, Session ID: ${result.session_id}`);
+            } else {
+                alert(`Failed to record payment: ${result.detail}`);
+            }
+        };
+
+        // Check Order Status
+        document.getElementById('checkOrderStatusForm').onsubmit = async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            const response = await fetch(`/api/users/${data.user_id}/order_status`, {
+                method: 'GET',
+            });
+            const result = await response.json();
+            alert(`Order Status for User ${data.user_id}: ${result.has_order ? "Order exists" : "No order found"}`);
+        };
+    </script>
+</body>
+</html>

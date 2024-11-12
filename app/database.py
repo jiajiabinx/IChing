@@ -1,10 +1,23 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import psycopg2
+from contextlib import contextmanager
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-engine = create_engine(os.environ["DB_URI"])
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Database connection parameters
+DB_PARAMS = {
+    'dbname': os.getenv('DB_NAME'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'),
+    'host': os.getenv('DB_HOST'),
+    'port': os.getenv('DB_PORT'),
+}
+
+@contextmanager
+def get_db_connection():
+    conn = psycopg2.connect(**DB_PARAMS)
+    try:
+        yield conn
+    finally:
+        conn.close()

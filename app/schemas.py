@@ -1,7 +1,8 @@
 from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import date, datetime
-from pydantic.validators import strict_datetime_validator, strict_date_validator
+#from pydantic.validators import strict_datetime_validator, strict_date_validator
+#Commented out because they are not used, and causing trouble with import
 
 
 class IChingBaseModel(BaseModel):
@@ -46,12 +47,14 @@ class Friend(IChingBaseModel):
     user_id_right: int
 
 
-    @field_validator('birth_date')
+    #@field_validator('birth_date')
+    # also changed parameter from data to values for model_validator
     @classmethod
-    def validate_user_ids(data: dict) -> dict:
-        if data['user_id_left'] >= data['user_id_right']:
-            raise ValueError('user_id_left must be less than user_id_right')
-        return data
+    @model_validator(mode="before")
+    def validate_user_ids(cls, values):
+        if values['user_id_left'] >= values['user_id_right']:
+            raise ValueError("user_id_left must be less than user_id_right")
+        return values
 
 
 class Order(IChingBaseModel):
