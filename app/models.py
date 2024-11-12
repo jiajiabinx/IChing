@@ -1,11 +1,4 @@
-import psycopg2
-from psycopg2 import sql
-from psycopg2.extras import RealDictCursor
-from contextlib import contextmanager
-import os
 from .database import get_db_connection
-
-
 
 def insert_user(user_data):
     query = """
@@ -23,9 +16,9 @@ def insert_user(user_data):
                 user_data['parental_income'], user_data['primary_interest'], user_data['profession'],
                 user_data['religion'], user_data['race']
             ))
-            user_id = cursor.fetchone()[0]
+            user = cursor.fetchone()
             conn.commit()
-    return user_id
+    return user
 
 def insert_friend(user_id_left, user_id_right):
     query = """
@@ -36,10 +29,12 @@ def insert_friend(user_id_left, user_id_right):
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(query, (min(user_id_left, user_id_right), max(user_id_left, user_id_right)))
+            friend = cursor.fetchone()
             conn.commit()
+    return friend
 
 def get_user_friends(user_id):
-    query = """
+    query_get_friends = """
     SELECT CASE
              WHEN user_id_left = %s THEN user_id_right
              ELSE user_id_left
@@ -47,11 +42,20 @@ def get_user_friends(user_id):
     FROM Friends
     WHERE user_id_left = %s OR user_id_right = %s;
     """
+    query_get_friends_detail = """
+    SELECT * FROM Users 
+    WHERE user_id IN (%s);
+    """
+    
     with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(query, (user_id, user_id, user_id))
+        with conn.cursor() as cursor:
+            cursor.execute(query_get_friends, (user_id, user_id, user_id))
             friends = cursor.fetchall()
-    return [friend['friend_id'] for friend in friends]
+            friends_ids = [friend['friend_id'] for friend in friends]
+            friends_ids_str = ','.join(friends_ids)
+            cursor.execute(query_get_friends_detail, (friends_ids_str,))
+            friends_detail = cursor.fetchall()
+    return friends_detail
 
 
 def delete_user(user_id):

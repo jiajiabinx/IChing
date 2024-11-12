@@ -7,7 +7,7 @@ from datetime import date, datetime
 
 class IChingBaseModel(BaseModel):
     class Config:
-        orm_mode = True    
+        orm_mode = False    
 
 
 class Users(IChingBaseModel):
@@ -41,6 +41,8 @@ class Users(IChingBaseModel):
             raise ValueError('Birth date cannot be in the future')
         return v
 
+class UserCreate(Users):
+    pass
 
 class Friend(IChingBaseModel):
     user_id_left: int
@@ -56,12 +58,15 @@ class Friend(IChingBaseModel):
             raise ValueError("user_id_left must be less than user_id_right")
         return values
 
+class FriendCreate(Friend):
+    pass
 
 class Order(IChingBaseModel):
     order_id: int
     amount: float = Field(gt=0)
 
-
+class OrderCreate(Order):
+    user_id: int
 class Session(IChingBaseModel):
     session_id: int
     timestamp: datetime
@@ -77,6 +82,7 @@ class Session(IChingBaseModel):
 class Completed(IChingBaseModel):
     user_id: int
     session_id: int
+    
 
 class PaidBy(IChingBaseModel):
     order_id: int
