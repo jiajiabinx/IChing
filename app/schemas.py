@@ -12,6 +12,7 @@ class IChingBaseModel(BaseModel):
 
 class Users(IChingBaseModel):
     user_id: int
+    display_name: str
     birth_date: date
     birth_location: str
     primary_residence: str
