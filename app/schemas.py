@@ -67,6 +67,7 @@ class Order(IChingBaseModel):
 
 class OrderCreate(Order):
     user_id: int
+
 class Session(IChingBaseModel):
     session_id: int
     timestamp: datetime
@@ -79,14 +80,11 @@ class Session(IChingBaseModel):
         return v
 
 
-class Completed(IChingBaseModel):
+class CompletedPayment(IChingBaseModel): #completed and paid_by rolled into one
     user_id: int
     session_id: int
-    
-
-class PaidBy(IChingBaseModel):
     order_id: int
-    session_id: int
+
 
 
 #Jia 
