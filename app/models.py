@@ -123,18 +123,18 @@ def check_order_exists(user_id, order_id):
     return order is not None
 
 
-def create_session_for_order(order_id):
+def create_session_for_order():
     query = """
-    INSERT INTO Session (order_id, timestamp)
-    VALUES (%s, CURRENT_TIMESTAMP)
-    RETURNING *;
+    INSERT INTO Session (timestamp)
+    VALUES (CURRENT_TIMESTAMP)
+    RETURNING session_id;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(query, (order_id,))
-            session = cursor.fetchone()
+            cursor.execute(query)
+            session_id = cursor.fetchone()
             conn.commit()
-    return session
+    return session_id
 
 
 def create_completed_payment(user_id, order_id, session_id):

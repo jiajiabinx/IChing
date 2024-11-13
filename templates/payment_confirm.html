@@ -46,21 +46,68 @@
     </div>
 
     <script>
-        function confirmPayment() {
-            fetch('/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+        // Global configuration
+        const BASE_URL = '{{ base_url }}';
+        // API endpoints
+        const API_ENDPOINTS = {
+            session: `${BASE_URL}/api/orders/session`,
+            payment: `${BASE_URL}/api/payments/confirm`,
+
+        };
+
+        // Get parameters from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order_id');
+        const userId = urlParams.get('user_id');
+        const amount = urlParams.get('amount');
+
+        async function confirmPayment() {
+            try {
+                // First create session
+                const sessionResponse = await fetch(`${API_ENDPOINTS.session}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!sessionResponse.ok) {
+                    throw new Error('Failed to create session');
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                window.location.href = data.redirect_url;
-            })
-            .catch(error => {
+
+                const sessionData = await sessionResponse.json();
+
+                // Then confirm payment
+                const paymentResponse = await fetch('/api/payments/confirm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        user_id: userId,
+                        session_id: sessionData.session_id
+                    })
+                });
+
+                if (!paymentResponse.ok) {
+                    throw new Error('Failed to confirm payment');
+                }
+
+                const paymentData = await paymentResponse.json();
+
+                // If payment data includes a redirect URL, use it
+                if (paymentData.redirect_url) {
+                    window.location.href = paymentData.redirect_url;
+                } else {
+                    // Default success redirect
+                    window.location.href = `/success?order_id=${orderId}`;
+                }
+
+            } catch (error) {
                 console.error('Error:', error);
                 alert('Payment processing failed. Please try again.');
-            });
+            }
         }
     </script>
 </body>

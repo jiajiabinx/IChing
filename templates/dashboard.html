@@ -391,14 +391,26 @@
 
                 if (!response.ok) throw new Error('Failed to generate story');
 
-                const newStory = await response.json();
+                const data = await response.json();
+                if (data.redirect_url) {
+
+                    const queryParams = new URLSearchParams({
+                        user_id: userId,
+                        order_id: data.order_id, 
+                        amount: data.amount
+                    });
+                    window.location.href = `${data.redirect_url}?${queryParams.toString()}`;  // Redirect to the URL
+                } else {
+                    alert('Failed to generate order. Please try again.');
+                }
+    
                 // Refresh the story history
                 fetchStoryHistory();
                 
                 // Optional: Show a success message
             } catch (error) {
-                console.error('Error generating story:', error);
-                alert('Failed to generate story. Please try again.');
+                console.error('Error generating order:', error);
+                alert('Failed to generate order. Please try again.');
             }
         }
     </script>

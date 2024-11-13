@@ -11,6 +11,8 @@ from typing import List
 
 app = FastAPI()
 
+base_url = "http://127.0.0.1:8000"
+
 # Set up Jinja2 templates
 templates = Jinja2Templates(directory="templates")
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +32,7 @@ async def get_dashboard(request: Request, user_id: int):
             {
                 "request": request,
                 "user_id": user_id,
-                "base_url": "http://127.0.0.1:8000"  # You can make this configurable
+                "base_url": base_url 
             }
         )
 
@@ -40,6 +42,17 @@ async def get_historical_sessions( user_id: int, response_model=List[schemas.His
     sessions = models.get_user_historical_sessions(user_id)
     return sessions
 
+@app.get("/confirm")
+async def confirm_order(request: Request):
+    amount = request.query_params.get('amount')
+    order_id = request.query_params.get('order_id')
+    return templates.TemplateResponse(
+        "payment_confirm.html",
+        {"request": request, 
+         "amount": amount, 
+         "order_id": order_id,
+         "base_url": base_url}
+    )
 
 # Include routers for the API
 app.include_router(users.router)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from app import models, schemas
 
@@ -12,6 +12,8 @@ class OrderResponse(BaseModel):
     amount: int
     order_id: int
 
+class SessionResponse(BaseModel):
+    session_id: int
 
 @router.post("/")
 async def create_order(order: schemas.OrderCreate) -> OrderResponse:
@@ -24,10 +26,10 @@ async def check_order_status(user_id: int):
     has_order = models.check_user_order(user_id)
     return {"has_order": has_order}
 
-@router.post("/{order_id}/session")
-async def create_session(order_id: int):
+@router.post("/session")
+async def create_session(request: Request) -> SessionResponse:
     try:
-        session_id = models.create_session_for_order(order_id)
-        return {"message": "Session created successfully", "session_id": session_id}
+        session_id = models.create_session_for_order()
+        return SessionResponse(session_id=session_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) 

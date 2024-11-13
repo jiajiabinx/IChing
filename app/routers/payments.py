@@ -6,7 +6,7 @@ router = APIRouter(
     tags=["payments"]
 )
     
-@router.post("/confirm_payment", response_model=schemas.CompletedPayment)
+@router.post("/confirm", response_model=schemas.CompletedPayment)
 async def record_payment(payment: schemas.CompletedPayment):
     """
     Endpoint to confirm a payment. Creates a session and a CompletedPayment entry.
