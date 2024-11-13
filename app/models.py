@@ -98,15 +98,15 @@ def delete_user(user_id):
             conn.commit()
 
 
-def insert_order(user_id, amount):
+def insert_order(amount):
     query = """
-    INSERT INTO Orders (user_id, amount)
-    VALUES (%s, %s)
+    INSERT INTO Orders (amount)
+    VALUES (%s)
     RETURNING *;
     """
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(query, (user_id, amount))
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, ( amount,))
             order = cursor.fetchone()
             conn.commit()
     return order
