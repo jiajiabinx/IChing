@@ -73,7 +73,7 @@ class Session(IChingBaseModel):
         return v
 
 
-class CompletedPayment(IChingBaseModel): #completed and paid_by rolled into one
+class CompletedPayment(IChingBaseModel):
     user_id: int
     session_id: int
     order_id: int
@@ -103,12 +103,12 @@ class SBERTCall(InitiatedTransaction):
 
 class GeneratedStory(IChingBaseModel):
     transaction_id: str
+    generated_story_text: str
     story_id: int
 
 
 class TempStory(GeneratedStory):
-    story_id: int
-    generated_story_text: str
+    
 
     @field_validator('generated_story_text')
     @classmethod
@@ -118,8 +118,6 @@ class TempStory(GeneratedStory):
         return v
 
 class DisplayStory(GeneratedStory):
-    story_id: int
-    generated_story_text: str
     references: str
     reference_summary: str
 

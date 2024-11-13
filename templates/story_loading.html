@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Your Story</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 40px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+        .loading-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .loading-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80% { content: '...'; }
+            100% { content: ''; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loading-container">
+            <div class="loading-title">Generating Your Story</div>
+            <div class="loading-text">
+                Consulting the I Ching and crafting your unique narrative<span class="loading-dots"></span>
+            </div>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = '{{ base_url }}';
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order_id');
+        const userId = urlParams.get('user_id');
+        const sessionId = urlParams.get('session_id');
+
+        const API_ENDPOINTS = {
+            qigua: `${BASE_URL}/api/story/gua`,
+            story: `${BASE_URL}/api/story`,
+            dashboard: `${BASE_URL}/dashboard`,
+        };
+
+        async function generateStory() {
+            try {
+                const response = await fetch(`${API_ENDPOINTS.qigua}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        user_id: userId,
+                        session_id: sessionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate story');
+                }
+
+                const data = await response.json();
+                
+                // Redirect to the story page with the new story_id
+                if (data.story_id) {
+                    window.location.href = `${API_ENDPOINTS.story}/${data.story_id}`;
+                } else {
+                    throw new Error('No story ID received');
+                }
+
+            } catch (error) {
+                console.error('Error generating story:', error);
+                alert('Failed to generate story. Please try again.');
+                // Optionally redirect to an error page or back to dashboard
+                window.location.href = `${API_ENDPOINTS.dashboard}/${userId}`;
+            }
+        }
+
+        // Start the story generation process when the page loads
+        document.addEventListener('DOMContentLoaded', generateStory);
+    </script>
+</body>
+</html> 

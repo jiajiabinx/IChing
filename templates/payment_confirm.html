@@ -52,6 +52,7 @@
         const API_ENDPOINTS = {
             session: `${BASE_URL}/api/orders/session`,
             payment: `${BASE_URL}/api/payments/confirm`,
+            story: `${BASE_URL}/story`,
 
         };
 
@@ -78,7 +79,7 @@
                 const sessionData = await sessionResponse.json();
 
                 // Then confirm payment
-                const paymentResponse = await fetch('/api/payments/confirm', {
+                const paymentResponse = await fetch(`${API_ENDPOINTS.payment}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -96,12 +97,21 @@
 
                 const paymentData = await paymentResponse.json();
 
+
+                //then create a story
+                const storyResponse = await fetch(`${API_ENDPOINTS.story}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
                 // If payment data includes a redirect URL, use it
                 if (paymentData.redirect_url) {
                     window.location.href = paymentData.redirect_url;
                 } else {
                     // Default success redirect
-                    window.location.href = `/success?order_id=${orderId}`;
+                    window.location.href = `/`;
                 }
 
             } catch (error) {

@@ -6,28 +6,48 @@ import json
 import os
 import anthropic
 from app.routers import reference
+from app.dependencies import templates
 
 
 router = APIRouter(
     prefix="/api/story",
     tags=["story"]
 )
-templates = Jinja2Templates(directory="templates")
 
+@router.post('/yunsuan')
+async def yun_suan(payment_token: schemas.CompletedPayment) -> schemas.TempStory:
+    check = models.check_payment(payment_token.user_id, 
+                                 payment_token.session_id, 
+                                 payment_token.order_id)
+    if not check:
+        raise HTTPException(status_code=400, detail="Payment not found")
+    #get biography
+    corpus = await create_biography(payment_token)
+    
+    #find referennce
+    #do a fake sbert call
+    sbert_call = models.record_sbert_call(corpus)
+    wiki_references = models.get_random_wiki_references(3)
+    wiki_reference_ids = [r.wiki_page_id for r in wiki_references]
+    
+    #record identified relationships
+    identified_relationships = models.record_identified_relationships(corpus.story_id, wiki_reference_ids)
+    
+    #record referred relationship
+    referred_relationships = models.record_referred_relationship(corpus.story_id, sbert_call.transaction_id)
+    return corpus
 
-
-@router.get("/gua")
+@router.post("/tuisuan")
 async def tui_suan(payment_token: schemas.CompletedPayment) -> schemas.DisplayStory:
-    check = models.check_payment(payment_token)
+    check = models.check_payment(payment_token.user_id, 
+                                 payment_token.session_id, 
+                                 payment_token.order_id)
     if not check:
         raise HTTPException(status_code=400, detail="Payment not found")
 
-    
-    #get biography
-    biography = await create_biography(payment_token)
-    
-    #find referennce
-    wiki_references = models.get_random_wiki_references(3)
+    wiki_references = models.get_identified_references_by_session_id(payment_token.session_id)
+    biography = await get_biography(wiki_references[0].story_id)
+    wiki_references = [schemas.WikiReference(**r) for r in wiki_references]
     wiki_references_str = json.dumps(wiki_references)
     
     client = anthropic.Anthropic(
@@ -71,7 +91,7 @@ async def tui_suan(payment_token: schemas.CompletedPayment) -> schemas.DisplaySt
 async def create_biography(payment_token: schemas.CompletedPayment) -> schemas.TempStory:
     user = models.get_user_by_id(payment_token.user_id)
     user_str = json.dumps(user)
-    temp_story = models.insert_temp_story(payment_token.transaction_id, user_str)
+    temp_story = models.insert_temp_story(user_str)
     return temp_story
 
 @router.get("/biography")
@@ -80,8 +100,4 @@ async def get_biography(story_id: int) -> schemas.TempStory:
     return temp_story
 
 
-@router.get('/display')
-async def get_story(story_id: int) -> schemas.DisplayStory:
-    display_story = models.get_display_story(story_id)
-    return display_story
 
