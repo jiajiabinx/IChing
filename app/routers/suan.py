@@ -7,7 +7,7 @@ router = APIRouter(
     tags=["suan"]
 )
 
-@router.post("/{user_id}")
+@router.post("/{paidment_token_id}")
 async def suan(user_id: int, transaction: schemas.InitiatedTransaction):
 
     transaction_data = transaction.model_dump()
