@@ -1,4 +1,5 @@
 from .database import get_db_connection
+from psycopg2.extras import RealDictCursor
 
 import json
 
@@ -18,6 +19,17 @@ def insert_user(user_data):
                 user_data['educational_level'], user_data['parental_income'], user_data['primary_interest'],
                 user_data['profession'], user_data['religion'], user_data['race']
             ))
+            user = cursor.fetchone()
+            conn.commit()
+    return user
+
+def update_user(user_data):
+    query = """
+    UPDATE Users SET 
+    """ 
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query, (user_data['user_id'], user_data['display_name'], user_data['birth_date'], user_data['birth_location'], user_data['primary_residence'], user_data['current_location'], user_data['college'], user_data['educational_level'], user_data['parental_income'], user_data['primary_interest'], user_data['profession'], user_data['religion'], user_data['race']))
             user = cursor.fetchone()
             conn.commit()
     return user
@@ -45,7 +57,7 @@ def get_user_by_id(user_id):
     SELECT * FROM Users WHERE user_id = %s;
     """
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(query, (user_id,))
             user = cursor.fetchone()
     return user
@@ -58,7 +70,7 @@ def get_random_users(exclude_ids, limit =5):
     ORDER BY RANDOM() LIMIT %s;
     """
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(query, (limit,))
             random_users = cursor.fetchall()
     return random_users
@@ -70,7 +82,7 @@ def get_user_friends(user_id):
                         OR (Users.user_id = Friends.user_id_right AND Friends.user_id_left = %s);
     """
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(query, (user_id, user_id))
             friends = cursor.fetchall()
     
@@ -165,15 +177,16 @@ def yun_suan(user_data, count = 3):
 def get_user_historical_sessions(user_id):
     query = """
     SELECT * 
-    FROM Users, CompletedPayment, InitiatedTransaction, DisplayStory
-    WHERE Users.user_id = %s 
-    AND CompletedPayment.user_id = Users.user_id 
-    AND InitiatedTransaction.session_id = CompletedPayment.session_id
-    AND DisplayStory.transaction_id = InitiatedTransaction.transaction_id
-    
+    FROM Users, Completed_Payment, Session, Initiated_Transaction, Generated_Story, Display_Story
+    WHERE Users.user_id = %s
+    AND Completed_Payment.user_id = Users.user_id 
+    AND Completed_Payment.session_id = Session.session_id
+    AND Initiated_Transaction.session_id = Completed_Payment.session_id
+    AND Generated_Story.story_id = Display_Story.story_id
+    AND Generated_Story.transaction_id = Initiated_Transaction.transaction_id;
     """
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(query, (user_id,))
             history = cursor.fetchall()
     return history

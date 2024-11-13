@@ -7,6 +7,19 @@ router = APIRouter(
     tags=["users"]
 )
 
+    
+
+@router.get("/{user_id}", response_model=schemas.Users)
+async def get_user(user_id: int) -> schemas.Users:
+    try:
+        user = models.get_user_by_id(user_id)
+        if user and not user.get('display_name'):
+            user['display_name'] = "Anonymous User " +user['user_id']
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.put("/", response_model=schemas.Users)
 async def create_user(user: schemas.UserCreate) -> schemas.Users:
     try:
@@ -15,11 +28,11 @@ async def create_user(user: schemas.UserCreate) -> schemas.Users:
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/{user_id}/friends", response_model=List[schemas.Users])
-async def get_friends(user_id: int):
+@router.post("/{user_id}", response_model=schemas.Users)
+async def update_user(user: schemas.Users) -> schemas.Users:
     try:
-        friends = models.get_user_friends(user_id)
-        return friends
+        updated_user = models.update_user(user.model_dump())
+        return updated_user
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

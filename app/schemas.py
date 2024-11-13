@@ -12,7 +12,7 @@ class IChingBaseModel(BaseModel):
 
 class Users(IChingBaseModel):
     user_id: int
-    display_name: str
+    display_name: str | None = "Anonymous User" 
     birth_date: date
     birth_location: str
     primary_residence: str
@@ -157,8 +157,9 @@ class UserCreate(Users):
 class FriendCreate(Friend):
     pass
 
-class OrderCreate(Order):
+class OrderCreate(IChingBaseModel):
     user_id: int
+    amount: int = 5
     
 class HistoricalSession(IChingBaseModel): 
     timestamp: datetime

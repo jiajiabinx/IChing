@@ -16,8 +16,8 @@ async def add_friend(friend: schemas.FriendCreate) -> schemas.Friend:
         raise HTTPException(status_code=400, detail=str(e)) 
     
     
-@router.get("/{user_id}", response_model=List[schemas.Friend])
-async def get_friends(user_id: int) -> List[schemas.Friend]:
+@router.get("/{user_id}", response_model=List[schemas.Users])
+async def get_friends(user_id: int) -> List[schemas.Users]:
     try:
         friends = models.get_user_friends(user_id)
         return friends
@@ -28,7 +28,7 @@ async def get_friends(user_id: int) -> List[schemas.Friend]:
 @router.get("/discover/{user_id}", response_model=List[schemas.Users])
 async def discover_friends(user_id: int) -> List[schemas.Users]:
     try:
-        friends_ids = [friend[0] for friend in models.get_user_friends(user_id)]
+        friends_ids = [friend['user_id'] for friend in models.get_user_friends(user_id)]
         exclude_ids = friends_ids + [user_id]
         discoverable_users = models.get_random_users(exclude_ids, limit=5)
         return discoverable_users

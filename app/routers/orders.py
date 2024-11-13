@@ -6,11 +6,20 @@ router = APIRouter(
     tags=["orders"]
 )
 
-@router.post("/create_order", response_model=schemas.Order)
+@router.post("/")
 async def create_order(order: schemas.OrderCreate):
+    order_id = models.insert_order(order.user_id, order.amount)
+    return {"message": "Order created successfully", "order_id": order_id}
+
+@router.get("/{user_id}/order_status")
+async def check_order_status(user_id: int):
+    has_order = models.check_user_order(user_id)
+    return {"has_order": has_order}
+
+@router.post("/{order_id}/session")
+async def create_session(order_id: int):
     try:
-        created_order = models.insert_order(order.user_id, order.amount)
-        return {"message": "Order created successfully", "order_id": created_order[0]}
-    # or we could return the full order object with all fields, like return created_order
+        session_id = models.create_session_for_order(order_id)
+        return {"message": "Session created successfully", "session_id": session_id}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) 

@@ -211,6 +211,7 @@
         async function handleLogin(event) {
             event.preventDefault();
             const userId = document.getElementById('loginUserId').value;
+            const errorElement = document.getElementById('loginError');
             
             try {
                 const response = await fetch('/login', {
@@ -218,17 +219,27 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ user_id: userId })
+                    body: JSON.stringify({ user_id: parseInt(userId) })
                 });
 
+                
                 if (response.ok) {
-                    window.location.href = '/dashboard';
+                    const data = await response.json();  // Parse the JSON response
+                console.log('Login response data:', data);  // Debug log
+
+                    if (data.redirect_url) {
+                        console.log('Redirecting to:', data.redirect_url);  // Debug log
+                        window.location.href = data.redirect_url;  // Redirect to the URL
+                    } else {
+                        errorElement.textContent = 'No redirect URL provided';  // Handle missing redirect URL
+                    }
                 } else {
-                    const error = await response.json();
-                    document.getElementById('loginError').textContent = error.detail;
+                    const error = await response.json();  // Parse error response
+                    errorElement.textContent = error.detail || 'Login failed';  // Display error message
                 }
             } catch (error) {
-                document.getElementById('loginError').textContent = 'An error occurred. Please try again.';
+                console.error('Login error:', error);  // Log any errors
+                errorElement.textContent = 'An error occurred. Please try again.';  // Display generic error message
             }
         }
 
