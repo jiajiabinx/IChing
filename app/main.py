@@ -46,8 +46,6 @@ HISTORICAL_FIGURES = [
 async def serve_frontend(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-
-
 @app.get("/confirm")
 async def payment_confirmation(request: Request):
     return templates.TemplateResponse(

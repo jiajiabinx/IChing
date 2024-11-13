@@ -4,19 +4,19 @@ import json
 
 def insert_user(user_data):
     query = """
-    INSERT INTO Users (birth_date, birth_location, primary_residence, current_location,
+    INSERT INTO Users (display_name, birth_date, birth_location, primary_residence, current_location,
                        college, educational_level, parental_income, primary_interest,
                        profession, religion, race)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    RETURNING user_id;
+    VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    RETURNING *;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(query, (
-                user_data['birth_date'], user_data['birth_location'], user_data['primary_residence'],
-                user_data['current_location'], user_data['college'], user_data['educational_level'],
-                user_data['parental_income'], user_data['primary_interest'], user_data['profession'],
-                user_data['religion'], user_data['race']
+                user_data['display_name'], user_data['birth_date'], user_data['birth_location'], 
+                user_data['primary_residence'], user_data['current_location'], user_data['college'],
+                user_data['educational_level'], user_data['parental_income'], user_data['primary_interest'],
+                user_data['profession'], user_data['religion'], user_data['race']
             ))
             user = cursor.fetchone()
             conn.commit()
@@ -26,13 +26,18 @@ def insert_friend(user_id_left, user_id_right):
     query = """
     INSERT INTO Friends (user_id_left, user_id_right)
     VALUES (%s, %s)
-    ON CONFLICT DO NOTHING;
+    ON CONFLICT DO NOTHING
+    RETURNING *;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(query, (min(user_id_left, user_id_right), max(user_id_left, user_id_right)))
             friend = cursor.fetchone()
             conn.commit()
+    
+    if not friend:
+        raise Exception("Friend relationship already exists or invalid user IDs.")
+    
     return friend
 
 def get_user_by_id(user_id):
@@ -45,53 +50,31 @@ def get_user_by_id(user_id):
             user = cursor.fetchone()
     return user
 
-def get_users_by_ids(user_ids):
-    user_ids_str = ','.join(map(str, user_ids))
-    query = """
-    SELECT * FROM Users WHERE user_id IN (%s);
-    """
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(query, (user_ids_str,))
-            users = cursor.fetchall()
-    return users
-
-def get_random_users( exclude_ids, limit =5):
-    query = """
-    SELECT * FROM Users 
-    WHERE user_id NOT IN (%s) ORDER BY RANDOM() LIMIT %s;
-    """
+def get_random_users(exclude_ids, limit =5):
     exclude_ids_str = ','.join(map(str, exclude_ids))
+    query = f"""
+    SELECT * FROM Users 
+    WHERE user_id NOT IN ({exclude_ids_str})
+    ORDER BY RANDOM() LIMIT %s;
+    """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(query, ( exclude_ids_str,limit))
-            users = cursor.fetchall()
-    return users
+            cursor.execute(query, (limit,))
+            random_users = cursor.fetchall()
+    return random_users
 
 def get_user_friends(user_id):
-    query_get_friends = """
-    SELECT CASE
-             WHEN user_id_left = %s THEN user_id_right
-             ELSE user_id_left
-           END AS friend_id
-    FROM Friends
-    WHERE user_id_left = %s OR user_id_right = %s;
+    query = """
+    SELECT Users.* FROM Users
+    INNER JOIN Friends ON (Users.user_id = Friends.user_id_left AND Friends.user_id_right = %s)
+                        OR (Users.user_id = Friends.user_id_right AND Friends.user_id_left = %s);
     """
-    query_get_friends_detail = """
-    SELECT * FROM Users 
-    WHERE user_id IN (%s);
-    """
-    
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(query_get_friends, (user_id, user_id, user_id))
+            cursor.execute(query, (user_id, user_id))
             friends = cursor.fetchall()
-            friends_ids = [friend['friend_id'] for friend in friends]
-            friends_ids_str = ','.join(friends_ids)
-            cursor.execute(query_get_friends_detail, (friends_ids_str,))
-            friends_detail = cursor.fetchall()
-    return friends_detail
-
+    
+    return friends
 
 def delete_user(user_id):
     query = """
@@ -107,50 +90,64 @@ def insert_order(user_id, amount):
     query = """
     INSERT INTO Orders (user_id, amount)
     VALUES (%s, %s)
-    RETURNING order_id;
+    RETURNING *;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(query, (user_id, amount))
-            order_id = cursor.fetchone()[0]
+            order = cursor.fetchone()
             conn.commit()
-    return order_id
+    return order
 
-def check_user_order(user_id):
+
+def check_order_exists(user_id, order_id):
     query = """
-    SELECT order_id FROM Orders
-    WHERE user_id = %s AND NOT EXISTS (
-        SELECT 1 FROM Paid_by WHERE Orders.order_id = Paid_by.order_id
-    );
+    SELECT * FROM Orders WHERE user_id = %s AND order_id = %s;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(query, (user_id,))
+            cursor.execute(query, (user_id, order_id))
             order = cursor.fetchone()
     return order is not None
+
 
 def create_session_for_order(order_id):
     query = """
     INSERT INTO Session (order_id, timestamp)
     VALUES (%s, CURRENT_TIMESTAMP)
-    RETURNING session_id;
+    RETURNING *;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(query, (order_id,))
-            session_id = cursor.fetchone()[0]
+            session = cursor.fetchone()
             conn.commit()
-    return session_id
+    return session
 
-def record_payment(user_id, order_id, session_id):
+
+def create_completed_payment(user_id, order_id, session_id):
     query = """
-    INSERT INTO Paid_by (user_id, order_id, session_id)
-    VALUES (%s, %s, %s);
+    INSERT INTO CompletedPayment (user_id, order_id, session_id)
+    VALUES (%s, %s, %s)
+    RETURNING *;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(query, (user_id, order_id, session_id))
+            completed_payment = cursor.fetchone()
             conn.commit()
+    return completed_payment
+
+def record_payment(user_id, order_id):
+    if not check_order_exists(user_id, order_id):
+        raise Exception("Order not found or does not belong to the specified user.")
+    
+    session = create_session_for_order(order_id)
+    
+    completed_payment = create_completed_payment(user_id, order_id, session[0])
+    
+    return completed_payment
+        
             
 def yun_suan(user_data, count = 3):
     query = """

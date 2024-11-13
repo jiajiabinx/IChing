@@ -48,8 +48,6 @@ class Friend(IChingBaseModel):
     user_id_right: int
 
 
-    #@field_validator('birth_date')
-    # also changed parameter from data to values for model_validator
     @classmethod
     @model_validator(mode="before")
     def validate_user_ids(cls, values):

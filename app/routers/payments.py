@@ -5,11 +5,15 @@ router = APIRouter(
     prefix="/api/payments",
     tags=["payments"]
 )
-
-@router.post("/")
+    
+@router.post("/confirm_payment", response_model=schemas.CompletedPayment)
 async def record_payment(payment: schemas.CompletedPayment):
+    """
+    Endpoint to confirm a payment. Creates a session and a CompletedPayment entry.
+    """
     try:
-        models.record_payment(payment.user_id, payment.order_id, payment.session_id)
+        completed_payment = models.record_payment(payment.user_id, payment.order_id)
         return {"message": "Payment recorded successfully"}
+    #or return completed_payment  
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)) 
+        raise HTTPException(status_code=400, detail=str(e))
