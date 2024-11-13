@@ -8,7 +8,7 @@ def insert_user(user_data):
     INSERT INTO Users (display_name, birth_date, birth_location, primary_residence, current_location,
                        college, educational_level, parental_income, primary_interest,
                        profession, religion, race)
-    VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     RETURNING *;
     """
     with get_db_connection() as conn:
@@ -19,20 +19,44 @@ def insert_user(user_data):
                 user_data['educational_level'], user_data['parental_income'], user_data['primary_interest'],
                 user_data['profession'], user_data['religion'], user_data['race']
             ))
-            user = cursor.fetchone()
+            user_tuple = cursor.fetchone()
+            user = dict(zip([desc[0] for desc in cursor.description], user_tuple))
             conn.commit()
     return user
 
 def update_user(user_data):
     query = """
     UPDATE Users SET 
-    """ 
-    with get_db_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(query, (user_data['user_id'], user_data['display_name'], user_data['birth_date'], user_data['birth_location'], user_data['primary_residence'], user_data['current_location'], user_data['college'], user_data['educational_level'], user_data['parental_income'], user_data['primary_interest'], user_data['profession'], user_data['religion'], user_data['race']))
-            user = cursor.fetchone()
-            conn.commit()
-    return user
+        display_name = %s,
+        birth_date = %s,
+        birth_location = %s,
+        primary_residence = %s,
+        current_location = %s,
+        college = %s,
+        educational_level = %s,
+        parental_income = %s,
+        primary_interest = %s,
+        profession = %s,
+        religion = %s,
+        race = %s
+    WHERE user_id = %s
+    RETURNING *;
+    """
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (
+                    user_data.get('display_name'), user_data.get('birth_date'), user_data.get('birth_location'),
+                    user_data.get('primary_residence'), user_data.get('current_location'), user_data.get('college'),
+                    user_data.get('educational_level'), user_data.get('parental_income'), user_data.get('primary_interest'),
+                    user_data.get('profession'), user_data.get('religion'), user_data.get('race'), user_data.get('user_id')
+                ))
+                updated_user = cursor.fetchone()
+                conn.commit()
+        return updated_user
+    except Exception as e:
+        print(f"Error updating user: {e}")
+        return None
 
 def insert_friend(user_id_left, user_id_right):
     query = """
