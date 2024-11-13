@@ -1,10 +1,13 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Path, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
 import random
 from app.routers import users, friends, orders, payments
+import app.models as models
+import app.schemas as schemas
 import asyncio
+from typing import List
 
 app = FastAPI()
 
@@ -45,7 +48,6 @@ async def serve_frontend(request: Request):
 
 
 
-
 @app.get("/confirm")
 async def payment_confirmation(request: Request):
     return templates.TemplateResponse(
@@ -73,6 +75,12 @@ async def show_story(request: Request):
             "figures": selected_figures
         }
     )
+
+@app.get("/sessions/{user_id}")
+async def get_historical_sessions( user_id: int, response_model=List[schemas.HistoricalSession]):
+    sessions = models.get_user_historical_sessions(user_id)
+    return sessions
+
 
 # Include routers for the API
 app.include_router(users.router)

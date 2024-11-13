@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .dashboard-container {
+            max-width: 1200px;
+            margin: auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .user-info {
+            position: relative;
+        }
+
+        .edit-icon {
+            cursor: pointer;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #666;
+        }
+
+        .user-field {
+            margin-bottom: 15px;
+        }
+
+        .user-field label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-field input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .discover-users {
+            display: grid;
+            gap: 10px;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: #ddd;
+        }
+
+        .history-item {
+            padding: 10px;
+            border-left: 3px solid #333;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .submit-button.active {
+            cursor: pointer;
+            opacity: 1;
+        }
+
+        .submit-button.active:hover {
+            background-color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="main-content">
+            <!-- User Info Section -->
+            <div class="card user-info">
+                <h2>Your Information</h2>
+                <span class="edit-icon" onclick="toggleEdit()">✏️</span>
+                <form id="userInfoForm">
+                    <div class="user-field">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" value="{{ user.name }}" disabled>
+                    </div>
+                    <div class="user-field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" value="{{ user.email }}" disabled>
+                    </div>
+                    <div class="user-field">
+                        <label for="interests">Interests</label>
+                        <input type="text" id="interests" value="{{ user.interests }}" disabled>
+                    </div>
+                    <button type="button" id="submitButton" class="submit-button">
+                        Submit New Info to Create a Story
+                    </button>
+                </form>
+            </div>
+
+            <!-- History Section -->
+            <div class="card">
+                <h2>Your Story History</h2>
+                {% for session in user.history %}
+                <div class="history-item">
+                    <h3>{{ session.date }}</h3>
+                    <p>{{ session.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Discover Friends Section -->
+        <div class="card">
+            <h2>Discover Friends</h2>
+            <div class="discover-users">
+                {% for friend in random_users %}
+                <div class="user-card">
+                    <div class="user-avatar"></div>
+                    <div class="user-info">
+                        <h3>{{ friend.name }}</h3>
+                        <p>{{ friend.interests }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isEditing = false;
+        let hasChanges = false;
+        const form = document.getElementById('userInfoForm');
+        const submitButton = document.getElementById('submitButton');
+        const inputs = form.querySelectorAll('input');
+
+        function toggleEdit() {
+            isEditing = !isEditing;
+            inputs.forEach(input => {
+                input.disabled = !isEditing;
+            });
+        }
+
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                hasChanges = true;
+                submitButton.classList.add('active');
+            });
+        });
+
+        submitButton.addEventListener('click', async () => {
+            if (!hasChanges) return;
+
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                interests: document.getElementById('interests').value
+            };
+
+            try {
+                const response = await fetch('/api/update-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    window.location.href = '/story';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

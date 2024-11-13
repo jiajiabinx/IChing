@@ -42,8 +42,6 @@ class Users(IChingBaseModel):
             raise ValueError('Birth date cannot be in the future')
         return v
 
-class UserCreate(Users):
-    pass
 
 class Friend(IChingBaseModel):
     user_id_left: int
@@ -59,15 +57,11 @@ class Friend(IChingBaseModel):
             raise ValueError("user_id_left must be less than user_id_right")
         return values
 
-class FriendCreate(Friend):
-    pass
 
 class Order(IChingBaseModel):
     order_id: int
     amount: float = Field(gt=0)
 
-class OrderCreate(Order):
-    user_id: int
 
 class Session(IChingBaseModel):
     session_id: int
@@ -85,7 +79,6 @@ class CompletedPayment(IChingBaseModel): #completed and paid_by rolled into one
     user_id: int
     session_id: int
     order_id: int
-
 
 
 #Jia 
@@ -155,3 +148,22 @@ class WikiReference(IChingBaseModel):
 class Identified(IChingBaseModel):
     wiki_page_id: str
     story_id: int
+    
+    
+    
+### New schemas for the app (that is not in the database)
+
+class UserCreate(Users):
+    pass
+
+class FriendCreate(Friend):
+    pass
+
+class OrderCreate(Order):
+    user_id: int
+    
+class HistoricalSession(IChingBaseModel): 
+    timestamp: datetime
+    generated_story_text: str
+    references: str
+    reference_summary: str

@@ -35,6 +35,39 @@ def insert_friend(user_id_left, user_id_right):
             conn.commit()
     return friend
 
+def get_user_by_id(user_id):
+    query = """
+    SELECT * FROM Users WHERE user_id = %s;
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query, (user_id,))
+            user = cursor.fetchone()
+    return user
+
+def get_users_by_ids(user_ids):
+    user_ids_str = ','.join(map(str, user_ids))
+    query = """
+    SELECT * FROM Users WHERE user_id IN (%s);
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query, (user_ids_str,))
+            users = cursor.fetchall()
+    return users
+
+def get_random_users( exclude_ids, limit =5):
+    query = """
+    SELECT * FROM Users 
+    WHERE user_id NOT IN (%s) ORDER BY RANDOM() LIMIT %s;
+    """
+    exclude_ids_str = ','.join(map(str, exclude_ids))
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query, ( exclude_ids_str,limit))
+            users = cursor.fetchall()
+    return users
+
 def get_user_friends(user_id):
     query_get_friends = """
     SELECT CASE
@@ -131,6 +164,23 @@ def yun_suan(user_data, count = 3):
             cursor.execute(query, (count,))
             references = cursor.fetchall()
     return references
+
+def get_user_historical_sessions(user_id):
+    query = """
+    SELECT * 
+    FROM Users, CompletedPayment, InitiatedTransaction, DisplayStory
+    WHERE Users.user_id = %s 
+    AND CompletedPayment.user_id = Users.user_id 
+    AND InitiatedTransaction.session_id = CompletedPayment.session_id
+    AND DisplayStory.transaction_id = InitiatedTransaction.transaction_id
+    
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query, (user_id,))
+            history = cursor.fetchall()
+    return history
+
     
 def record_APICall(user, references, transaction_data):
     query = """
