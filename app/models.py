@@ -136,13 +136,13 @@ def insert_order(amount):
     return order
 
 
-def check_order_exists(user_id, order_id):
+def check_order_exists(order_id):
     query = """
-    SELECT * FROM Orders WHERE user_id = %s AND order_id = %s;
+    SELECT * FROM Orders WHERE order_id = %s;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(query, (user_id, order_id))
+            cursor.execute(query, (order_id,))
             order = cursor.fetchone()
     return order is not None
 
@@ -163,7 +163,7 @@ def create_session_for_order():
 
 def create_completed_payment(user_id, order_id, session_id):
     query = """
-    INSERT INTO CompletedPayment (user_id, order_id, session_id)
+    INSERT INTO Completed_Payment (user_id, order_id, session_id)
     VALUES (%s, %s, %s)
     RETURNING *;
     """
@@ -175,12 +175,12 @@ def create_completed_payment(user_id, order_id, session_id):
     return completed_payment
 
 def record_payment(user_id, order_id):
-    if not check_order_exists(user_id, order_id):
-        raise Exception("Order not found or does not belong to the specified user.")
+    if not check_order_exists(order_id):
+        raise Exception("Order not found.")
     
-    session = create_session_for_order(order_id)
+    session_id = create_session_for_order()
     
-    completed_payment = create_completed_payment(user_id, order_id, session[0])
+    completed_payment = create_completed_payment(user_id, order_id, session_id)
     
     return completed_payment
         

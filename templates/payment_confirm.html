@@ -48,11 +48,8 @@
     <script>
         // Global configuration
         const BASE_URL = '{{ base_url }}';
-        // API endpoints
         const API_ENDPOINTS = {
-            session: `${BASE_URL}/api/orders/session`,
             payment: `${BASE_URL}/api/payments/confirm`,
-
         };
 
         // Get parameters from URL
@@ -63,30 +60,15 @@
 
         async function confirmPayment() {
             try {
-                // First create session
-                const sessionResponse = await fetch(`${API_ENDPOINTS.session}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-
-                if (!sessionResponse.ok) {
-                    throw new Error('Failed to create session');
-                }
-
-                const sessionData = await sessionResponse.json();
-
-                // Then confirm payment
-                const paymentResponse = await fetch('/api/payments/confirm', {
+                // Directly confirm payment without creating a separate session
+                const paymentResponse = await fetch(API_ENDPOINTS.payment, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_id: orderId,
                         user_id: userId,
-                        session_id: sessionData.session_id
+                        order_id: orderId
                     })
                 });
 
@@ -96,12 +78,12 @@
 
                 const paymentData = await paymentResponse.json();
 
-                // If payment data includes a redirect URL, use it
+                // Redirect based on response
                 if (paymentData.redirect_url) {
                     window.location.href = paymentData.redirect_url;
                 } else {
                     // Default success redirect
-                    window.location.href = `/success?order_id=${orderId}`;
+                    window.location.href = `/story?order_id=${orderId}`;
                 }
 
             } catch (error) {
@@ -111,4 +93,4 @@
         }
     </script>
 </body>
-</html> 
+</html>

@@ -75,8 +75,8 @@ class Session(IChingBaseModel):
 
 class CompletedPayment(IChingBaseModel): #completed and paid_by rolled into one
     user_id: int
-    session_id: int
     order_id: int
+    session_id: int
 
 
 #Jia 
@@ -171,6 +171,10 @@ class FriendCreate(Friend):
 class OrderCreate(IChingBaseModel):
     user_id: int
     amount: int = 5
+
+class PaymentRequest(IChingBaseModel):
+    user_id: int
+    order_id: int
     
 class HistoricalSession(IChingBaseModel): 
     timestamp: datetime
