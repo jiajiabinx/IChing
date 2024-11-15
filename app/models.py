@@ -181,25 +181,24 @@ def get_user_historical_sessions(user_id):
     return history
 
     
-def record_APICall(prompt):
-    transaction_id = uuid.uuid4()
+def record_APICall(transaction_id, session_id, prompt):
     record_transaction_query = """
     INSERT INTO Initiated_Transaction (transaction_id, session_id)
     VALUES (%s, %s);
     """
     record_API_call_query = """
-    INSERT INTO APICall (transaction_id, prompt)
+    INSERT INTO API_Call (transaction_id, prompt)
     VALUES (%s, %s);
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(record_transaction_query, (transaction_id,))
+            cursor.execute(record_transaction_query, (transaction_id, session_id))
             cursor.execute(record_API_call_query, (transaction_id, prompt))
             conn.commit()
     return transaction_id
 
-def record_sbert_call(corpus):
-    transaction_id = uuid.uuid4()
+def record_sbert_call(transaction_id, session_id, corpus):
+    
     record_transaction_query = """
     INSERT INTO Initiated_Transaction (transaction_id, session_id)
     VALUES (%s, %s);
@@ -211,46 +210,54 @@ def record_sbert_call(corpus):
     
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute(record_transaction_query, (transaction_id,))
+            cursor.execute(record_transaction_query, (transaction_id, session_id))
             cursor.execute(record_sbert_call_query, (transaction_id, corpus))
             conn.commit()
     return transaction_id
 
-def insert_temp_story(generated_story_text):
+def insert_temp_story(transaction_id, generated_story_text):
     generated_story_query = """
-    INSERT INTO Generated_Story (generated_story_text)
-    VALUES (%s)
+    INSERT INTO Generated_Story (transaction_id, generated_story_text)
+    VALUES (%s, %s)
     RETURNING *;
     """
     temp_story_query = """
-    INSERT INTO Temp_Story (generated_story_text)
+    INSERT INTO Temp_Story (story_id)
     VALUES (%s)
     RETURNING *;
     """
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(generated_story_query, (generated_story_text,))
+            cursor.execute(generated_story_query, (transaction_id, generated_story_text))
             generated_story = cursor.fetchone()
             cursor.execute(temp_story_query, (generated_story['story_id'],))
             temp_story = cursor.fetchone()
+            conn.commit()
     return temp_story
 
-def insert_display_story(references, reference_summary, generated_story_text):
+def insert_display_story(transaction_id, references, reference_summary, generated_story_text):
     generated_story_query = """
-    INSERT INTO Generated_Story (generated_story_text)
-    VALUES (%s)
+    INSERT INTO Generated_Story (transaction_id, generated_story_text)
+    VALUES (%s, %s)
     RETURNING *;
     """ 
     display_story_query = """
-    INSERT INTO Display_Story (story_id, references, reference_summary)
+    INSERT INTO Display_Story (story_id, "references", reference_summary)
     VALUES (%s, %s, %s);
+    """
+    get_story_query = """
+    SELECT * FROM Generated_Story, Display_Story
+    WHERE Display_Story.story_id = %s
+    AND Generated_Story.story_id = Display_Story.story_id;
     """
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(generated_story_query, (generated_story_text,))
+            cursor.execute(generated_story_query, (transaction_id, generated_story_text,))
             generated_story = cursor.fetchone()
             cursor.execute(display_story_query, (generated_story['story_id'], references, reference_summary ))
+            cursor.execute(get_story_query, (generated_story['story_id'],))
             display_story = cursor.fetchone()
+            conn.commit()
     return display_story
 
 def get_display_story(story_id):
@@ -269,7 +276,7 @@ def get_display_story(story_id):
 
 def record_identified_relationships(story_id, wiki_reference_ids):
     query = """
-    INSERT INTO Identified_Relationships (story_id, wiki_page_id)
+    INSERT INTO Identified (story_id, wiki_page_id)
     VALUES (%s, %s)
     RETURNING *;
     """
@@ -283,8 +290,9 @@ def record_identified_relationships(story_id, wiki_reference_ids):
   
 def record_referred_relationship(story_id,transaction_id):
     query = """
-    INSERT INTO Referred_Relationships (story_id, transaction_id)
-    VALUES (%s, %s);
+    INSERT INTO Referred (story_id, transaction_id)
+    VALUES (%s, %s)
+    RETURNING *;
     """
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
@@ -306,14 +314,65 @@ def check_payment(user_id, session_id, order_id):
             payment = cursor.fetchone()
     return payment is not None
 
+def get_identified_references_by_display_story_id(display_story_id):
+    query = """
+    WITH SessionInfo AS (
+        SELECT Initiated_Transaction.session_id
+        FROM Generated_Story, API_Call, Initiated_Transaction
+        WHERE Generated_Story.story_id = %s
+        AND Generated_Story.transaction_id = API_Call.transaction_id
+        AND API_Call.transaction_id = Initiated_Transaction.transaction_id
+    )
+    SELECT DISTINCT Wiki_Reference.*
+    FROM  Initiated_Transaction, Referred, Identified, Wiki_Reference
+    WHERE Initiated_Transaction.session_id = (SELECT session_id FROM SessionInfo)
+    AND Referred.transaction_id = Initiated_Transaction.transaction_id
+    AND Identified.story_id = Referred.story_id
+    AND Wiki_Reference.wiki_page_id = Identified.wiki_page_id;
+    """
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, (display_story_id,))
+            references = cursor.fetchall()
+    return references
 
 def get_identified_references_by_session_id(session_id):
     query ="""
-    SELECT * FROM  Completed_Payment, Initiated_Transaction, Referred, Temp_Story, Identified, WikiReference
-    WHERE Completed_Payment.session_id = %s
-    AND Initiated_Transaction.session_id = Completed_Payment.session_id
+    SELECT DISTINCT Wiki_Reference.*
+    FROM  Initiated_Transaction, Referred, Identified, Wiki_Reference
+    WHERE Initiated_Transaction.session_id = %s
     AND Referred.transaction_id = Initiated_Transaction.transaction_id
     AND Identified.story_id = Referred.story_id
-    AND Temp_Story.story_id = Identified.story_id
-    AND WikiReference.wiki_page_id = Referred.wiki_page_id;
+    AND Wiki_Reference.wiki_page_id = Identified.wiki_page_id;
     """
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, (session_id,))
+            identified_references = cursor.fetchall()
+    return identified_references
+
+def get_temp_story(story_id):
+    query = """
+    SELECT 
+        ts.story_id,
+        gs.transaction_id,
+        gs.generated_story_text
+    FROM Temp_Story ts, Generated_Story gs
+    WHERE ts.story_id = gs.story_id
+    AND ts.story_id = %s;
+    """
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, (story_id,))
+            temp_story = cursor.fetchone()
+    return temp_story
+
+def get_random_wiki_references(n):
+    query = """
+    SELECT * FROM Wiki_Reference ORDER BY RANDOM() LIMIT %s;
+    """
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, (n,))
+            wiki_references = cursor.fetchall()
+    return wiki_references

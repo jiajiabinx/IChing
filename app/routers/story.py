@@ -1,12 +1,10 @@
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, HTTPException
 from typing import Dict, List
 from app import models, schemas
 import json
 import os
+import uuid
 import anthropic
-from app.routers import reference
-from app.dependencies import templates
 
 
 router = APIRouter(
@@ -21,21 +19,32 @@ async def yun_suan(payment_token: schemas.CompletedPayment) -> schemas.TempStory
                                  payment_token.order_id)
     if not check:
         raise HTTPException(status_code=400, detail="Payment not found")
-    #get biography
-    corpus = await create_biography(payment_token)
+    ##get biography    
+    #record a fake api call
+    #later will implement an actual api call
+    user = models.get_user_by_id(payment_token.user_id)
+    user = schemas.Users(**user)
+    user_str = json.dumps(user.model_dump(mode="json"))
+    api_call_transaction_id = uuid.uuid4()
+    api_call = models.record_APICall(api_call_transaction_id, payment_token.session_id, "fake_placeholder_prompt")
+    _ = models.insert_temp_story(api_call_transaction_id, user_str)
+    temp_story = models.get_temp_story(_["story_id"])
+    temp_story = schemas.TempStory(**temp_story)
     
-    #find referennce
     #do a fake sbert call
-    sbert_call = models.record_sbert_call(corpus)
+    sbert_call_transaction_id = uuid.uuid4()
+    sbert_call = models.record_sbert_call(sbert_call_transaction_id, payment_token.session_id, user_str)
+    #find referennce
+    
     wiki_references = models.get_random_wiki_references(3)
-    wiki_reference_ids = [r.wiki_page_id for r in wiki_references]
-    
-    #record identified relationships
-    identified_relationships = models.record_identified_relationships(corpus.story_id, wiki_reference_ids)
-    
+    wiki_reference_ids = [r["wiki_page_id"] for r in wiki_references]
     #record referred relationship
-    referred_relationships = models.record_referred_relationship(corpus.story_id, sbert_call.transaction_id)
-    return corpus
+    referred_relationships = models.record_referred_relationship(temp_story.story_id, sbert_call_transaction_id)
+
+    #record identified relationships
+    identified_relationships = models.record_identified_relationships(temp_story.story_id, wiki_reference_ids)
+    
+    return temp_story
 
 @router.post("/tuisuan")
 async def tui_suan(payment_token: schemas.CompletedPayment) -> schemas.DisplayStory:
@@ -44,10 +53,23 @@ async def tui_suan(payment_token: schemas.CompletedPayment) -> schemas.DisplaySt
                                  payment_token.order_id)
     if not check:
         raise HTTPException(status_code=400, detail="Payment not found")
-
+   
+    #record api call
+    
+    system_prompt = """Pretend that you are a fortune teller. 
+    You will be given a biography of a person. 
+    You will use your vast knowledge of human history and pattern finding skills to write a short predictive story about their life.
+    Pretend that the three historical figure and their stories are some of the most similar life trajectories to the person in question.
+    You will use the biography to determine which three historical figures are most similar to the person in question.
+    You will then use the biography to weave a short predictive fortune using the life trajectories of the three historical figures.
+    The story should be 1000 words or less.
+    You do not need to respond with pleasantry. \n """
+    transaction_id = uuid.uuid4()
+    models.record_APICall(transaction_id, payment_token.session_id, system_prompt)
+    
     wiki_references = models.get_identified_references_by_session_id(payment_token.session_id)
-    biography = await get_biography(wiki_references[0].story_id)
-    wiki_references = [schemas.WikiReference(**r) for r in wiki_references]
+    biography = await get_biography(wiki_references[0]["story_id"])
+    wiki_references = [schemas.WikiReference(**r).model_dump(mode="json") for r in wiki_references]
     wiki_references_str = json.dumps(wiki_references)
     
     client = anthropic.Anthropic(
@@ -58,21 +80,14 @@ async def tui_suan(payment_token: schemas.CompletedPayment) -> schemas.DisplaySt
     model="claude-3-5-sonnet-20240620",
     max_tokens=1000,
     temperature=0,
-    system="""Pretend that you are a historian and fortune teller. 
-    You will be given a biography of a person. 
-    You will use your vast knowledge of human history and pattern finding skills to write a short predictive story about their life.
-    Pretend that the three historical figure and their stories are some of the most similar life trajectories to the person in question.
-    You will use the biography to determine which three historical figures are most similar to the person in question.
-    You will then use the biography to weave a short story using the life trajectories of the three historical figures.
-    The story should be 1000 words or less.
-    You do not need to respond with pleasantry. \n """,
+    system=system_prompt,
     messages=[
         {
             "role": "user",
             "content": [
                 {
                     "type": "text",
-                    "text": biography
+                    "text": biography.generated_story_text
                 },
                 {
                     "type": "text",
@@ -83,20 +98,23 @@ async def tui_suan(payment_token: schemas.CompletedPayment) -> schemas.DisplaySt
     ]
     )
     story_text = message.content[0].text
+    
     #generate story
-    display_story = models.insert_display_story(payment_token.transaction_id, story_text, wiki_references_str, "")
+    display_story = models.insert_display_story(transaction_id, wiki_references_str, "", story_text)
+    display_story = schemas.DisplayStory(**display_story)
     return display_story
 
-@router.put("/biography")
-async def create_biography(payment_token: schemas.CompletedPayment) -> schemas.TempStory:
-    user = models.get_user_by_id(payment_token.user_id)
-    user_str = json.dumps(user)
-    temp_story = models.insert_temp_story(user_str)
-    return temp_story
+
+@router.get("/{story_id}")
+async def get_story(story_id: int) -> schemas.DisplayStory:
+    display_story = models.get_display_story(story_id)
+    display_story = schemas.DisplayStory(**display_story)
+    return display_story
 
 @router.get("/biography")
 async def get_biography(story_id: int) -> schemas.TempStory:
     temp_story = models.get_temp_story(story_id)
+    temp_story = schemas.TempStory(**temp_story)
     return temp_story
 
 

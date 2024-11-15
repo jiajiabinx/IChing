@@ -42,7 +42,7 @@
     <div class="payment-box">
         <h2>Amount to Pay</h2>
         <div class="amount">${{ amount }}</div>
-        <button onclick="confirmPayment()">Confirm Payment</button>
+        <button id="confirmButton" class="payment-button">Confirm Payment</button>
     </div>
 
     <script>
@@ -60,7 +60,6 @@
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order_id');
         const userId = urlParams.get('user_id');
-        const amount = urlParams.get('amount');
 
         async function confirmPayment() {
             try {
@@ -103,7 +102,12 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                    },
+                    body: JSON.stringify({
+                        order_id: paymentData.order_id,
+                        user_id: paymentData.user_id,
+                        session_id: paymentData.session_id
+                    })
                 });
 
                 // If payment data includes a redirect URL, use it
@@ -119,6 +123,9 @@
                 alert('Payment processing failed. Please try again.');
             }
         }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('confirmButton').addEventListener('click', confirmPayment);
+        });
     </script>
 </body>
 </html> 

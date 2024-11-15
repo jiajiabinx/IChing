@@ -108,7 +108,6 @@ class GeneratedStory(IChingBaseModel):
 
 
 class TempStory(GeneratedStory):
-    
 
     @field_validator('generated_story_text')
     @classmethod

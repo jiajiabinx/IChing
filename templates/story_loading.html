@@ -82,14 +82,20 @@
         const sessionId = urlParams.get('session_id');
 
         const API_ENDPOINTS = {
-            qigua: `${BASE_URL}/api/story/gua`,
+            qigua: `${BASE_URL}/api/story/yunsuan`,
+            duangua: `${BASE_URL}/api/story/tuisuan`,
             story: `${BASE_URL}/api/story`,
+            display_story: `${BASE_URL}/story`,
             dashboard: `${BASE_URL}/dashboard`,
         };
-
+        if (!orderId || !userId || !sessionId) {
+            alert('No payment token found');
+            window.location.href = `${API_ENDPOINTS.dashboard}/${userId}`;
+        }
         async function generateStory() {
             try {
-                const response = await fetch(`${API_ENDPOINTS.qigua}`, {
+                // First API call - qigua
+                const qiguaResponse = await fetch(`${API_ENDPOINTS.qigua}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -101,15 +107,41 @@
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to generate story');
+                if (!qiguaResponse.ok) {
+                    throw new Error('Failed at yunsuan');
                 }
 
-                const data = await response.json();
-                
-                // Redirect to the story page with the new story_id
-                if (data.story_id) {
-                    window.location.href = `${API_ENDPOINTS.story}/${data.story_id}`;
+                // Wait for first response
+                const qiguaData = await qiguaResponse.json();
+                console.log('Yunsuan completed:', qiguaData);
+
+                // Second API call - duangua
+                const duanguaResponse = await fetch(`${API_ENDPOINTS.duangua}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        user_id: userId,
+                        session_id: sessionId
+                    })
+                });
+
+                if (!duanguaResponse.ok) {
+                    throw new Error('Failed at tuisuan');
+                }
+
+                const display_story_data = await duanguaResponse.json();
+
+                if (display_story_data.story_id) {
+                    // Create URL with query parameters
+                    const queryParams = new URLSearchParams({
+                        user_id: userId,
+                        session_id: sessionId,
+                        order_id: orderId
+                    });
+                    window.location.href = `${API_ENDPOINTS.display_story}/${display_story_data.story_id}?${queryParams}`;
                 } else {
                     throw new Error('No story ID received');
                 }
@@ -117,13 +149,18 @@
             } catch (error) {
                 console.error('Error generating story:', error);
                 alert('Failed to generate story. Please try again.');
-                // Optionally redirect to an error page or back to dashboard
                 window.location.href = `${API_ENDPOINTS.dashboard}/${userId}`;
             }
         }
 
+        // Add console log to verify the function is being called
+        console.log('Loading story generation page...');
+
         // Start the story generation process when the page loads
-        document.addEventListener('DOMContentLoaded', generateStory);
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, starting story generation...');
+            generateStory();
+        });
     </script>
 </body>
 </html> 
