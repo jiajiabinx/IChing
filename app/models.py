@@ -168,7 +168,7 @@ def create_completed_payment(user_id, order_id, session_id):
     RETURNING *;
     """
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(query, (user_id, order_id, session_id))
             completed_payment = cursor.fetchone()
             conn.commit()

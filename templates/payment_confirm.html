@@ -83,7 +83,7 @@
                     window.location.href = paymentData.redirect_url;
                 } else {
                     // Default success redirect
-                    window.location.href = `/story?order_id=${orderId}`;
+                    window.location.href = `/story?order_id=${orderId}&user_id=${userId}&session_id=${paymentData.session_id}`;
                 }
 
             } catch (error) {
