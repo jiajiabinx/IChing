@@ -75,8 +75,8 @@ class Session(IChingBaseModel):
 
 class CompletedPayment(IChingBaseModel):
     user_id: int
-    session_id: int
     order_id: int
+    session_id: int
 
 
 #Jia 
@@ -148,8 +148,19 @@ class Identified(IChingBaseModel):
     
 ### New schemas for the app (that is not in the database)
 
-class UserCreate(Users):
-    pass
+class UserCreate(IChingBaseModel):
+    display_name: str | None = "Anonymous User"
+    birth_date: date
+    birth_location: str
+    primary_residence: str
+    current_location: str
+    college: str
+    educational_level: str
+    parental_income: int
+    primary_interest: str
+    profession: str
+    religion: str
+    race: str
 
 class FriendCreate(Friend):
     pass
@@ -157,6 +168,10 @@ class FriendCreate(Friend):
 class OrderCreate(IChingBaseModel):
     user_id: int
     amount: int = 5
+
+class PaymentRequest(IChingBaseModel):
+    user_id: int
+    order_id: int
     
 class HistoricalSession(IChingBaseModel): 
     timestamp: datetime

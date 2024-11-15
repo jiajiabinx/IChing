@@ -48,12 +48,9 @@
     <script>
         // Global configuration
         const BASE_URL = '{{ base_url }}';
-        // API endpoints
         const API_ENDPOINTS = {
-            session: `${BASE_URL}/api/orders/session`,
             payment: `${BASE_URL}/api/payments/confirm`,
             story: `${BASE_URL}/story_loading`,
-
         };
 
         // Get parameters from URL
@@ -63,30 +60,17 @@
 
         async function confirmPayment() {
             try {
-                // First create session
-                const sessionResponse = await fetch(`${API_ENDPOINTS.session}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
 
-                if (!sessionResponse.ok) {
-                    throw new Error('Failed to create session');
-                }
+                // Directly confirm payment without creating a separate session
+                const paymentResponse = await fetch(API_ENDPOINTS.payment, {
 
-                const sessionData = await sessionResponse.json();
-
-                // Then confirm payment
-                const paymentResponse = await fetch(`${API_ENDPOINTS.payment}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        order_id: orderId,
                         user_id: userId,
-                        session_id: sessionData.session_id
+                        order_id: orderId
                     })
                 });
 
@@ -95,31 +79,9 @@
                 }
 
                 const paymentData = await paymentResponse.json();
-
-
-                //then create a story
-                const storyResponse = await fetch(`${API_ENDPOINTS.story}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        order_id: paymentData.order_id,
-                        user_id: paymentData.user_id,
-                        session_id: paymentData.session_id
-                    })
-                });
-
-                // If payment data includes a redirect URL, use it
-                const queryParams = new URLSearchParams({
-                    order_id: paymentData.order_id,
-                    session_id: paymentData.session_id,  // Make sure this matches the response field name
-                    user_id: paymentData.user_id        // If you need to pass user_id as well
-                });
-
-                window.location.href = `${API_ENDPOINTS.story}/?${queryParams.toString()}`;
                 
 
+                window.location.href = `/story?order_id=${orderId}&user_id=${userId}&session_id=${paymentData.session_id}`;
             } catch (error) {
                 console.error('Error:', error);
                 alert('Payment processing failed. Please try again.');
@@ -130,4 +92,4 @@
         });
     </script>
 </body>
-</html> 
+</html>

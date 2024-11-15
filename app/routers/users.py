@@ -27,14 +27,18 @@ async def create_user(user: schemas.UserCreate) -> schemas.Users:
         return created_user
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-@router.post("/{user_id}", response_model=schemas.Users)
-async def update_user(user: schemas.Users) -> schemas.Users:
+    
+@router.put("/{user_id}")
+async def update_user(user_id: int, user: schemas.UserCreate):
     try:
-        updated_user = models.update_user(user.model_dump())
+        user_data = user.model_dump()
+        user_data['user_id'] = user_id  # Ensure user_id is in the dictionary
+        updated_user = models.update_user(user_data)
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="User not found or failed to update")
         return updated_user
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Error updating user info: {str(e)}")
 
 @router.delete("/{user_id}")
 async def delete_user(user_id: int):

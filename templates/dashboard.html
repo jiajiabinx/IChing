@@ -398,21 +398,22 @@
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const userData = Object.fromEntries(formData.entries());
-                
+
                 try {
                     const response = await fetch(`${API_ENDPOINTS.user}/${userId}`, {
-                        method: 'POST',
+                        method: 'PUT', // Ensure we use PUT since we updated the endpoint
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify(userData)
+                        body: JSON.stringify(userData),
                     });
                     
                     if (!response.ok) throw new Error('Failed to update user info');
                     
-                    const updatedUser = await response.json();
-                    displayUserInfo(updatedUser);
-                    toggleEdit();
+                    // Fetch and display updated user data
+                    await fetchUserInfo();
+                    
+                    toggleEdit();  // Close the form and show updated info
                 } catch (error) {
                     document.getElementById('userError').textContent = error.message;
                 }
