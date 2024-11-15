@@ -52,7 +52,7 @@
         const API_ENDPOINTS = {
             session: `${BASE_URL}/api/orders/session`,
             payment: `${BASE_URL}/api/payments/confirm`,
-            story: `${BASE_URL}/story`,
+            story: `${BASE_URL}/story_loading`,
 
         };
 
@@ -111,12 +111,14 @@
                 });
 
                 // If payment data includes a redirect URL, use it
-                if (paymentData.redirect_url) {
-                    window.location.href = paymentData.redirect_url;
-                } else {
-                    // Default success redirect
-                    window.location.href = `/`;
-                }
+                const queryParams = new URLSearchParams({
+                    order_id: paymentData.order_id,
+                    session_id: paymentData.session_id,  // Make sure this matches the response field name
+                    user_id: paymentData.user_id        // If you need to pass user_id as well
+                });
+
+                window.location.href = `${API_ENDPOINTS.story}/?${queryParams.toString()}`;
+                
 
             } catch (error) {
                 console.error('Error:', error);
