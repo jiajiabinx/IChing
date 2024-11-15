@@ -66,9 +66,12 @@ async def tui_suan(payment_token: schemas.CompletedPayment) -> schemas.DisplaySt
     You do not need to respond with pleasantry. \n """
     transaction_id = uuid.uuid4()
     models.record_APICall(transaction_id, payment_token.session_id, system_prompt)
-    
+
     wiki_references = models.get_identified_references_by_session_id(payment_token.session_id)
-    biography = await get_biography(wiki_references[0]["story_id"])
+
+    biography = models.get_temp_story_by_session_id(payment_token.session_id)
+    biography = schemas.TempStory(**biography)
+    
     wiki_references = [schemas.WikiReference(**r).model_dump(mode="json") for r in wiki_references]
     wiki_references_str = json.dumps(wiki_references)
     

@@ -338,6 +338,25 @@ def check_payment(user_id, session_id, order_id):
             payment = cursor.fetchone()
     return payment is not None
 
+def get_temp_story_by_session_id(session_id):
+    query = """
+        SELECT *
+        FROM Referred, Temp_Story, Generated_Story
+        WHERE Referred.story_id = Temp_Story.story_id
+        AND Generated_Story.story_id = Temp_Story.story_id
+        AND Referred.transaction_id = (
+            SELECT max(SBERT_Call.transaction_id) 
+            FROM Initiated_Transaction, SBERT_Call
+            WHERE Initiated_Transaction.session_id = %s
+            AND SBERT_Call.transaction_id = Initiated_Transaction.transaction_id
+        );
+    """
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, (session_id,))
+            temp_story = cursor.fetchone()
+    return temp_story
+
 def get_identified_references_by_display_story_id(display_story_id):
     query = """
     WITH SessionInfo AS (
@@ -347,7 +366,7 @@ def get_identified_references_by_display_story_id(display_story_id):
         AND Generated_Story.transaction_id = API_Call.transaction_id
         AND API_Call.transaction_id = Initiated_Transaction.transaction_id
     )
-    SELECT DISTINCT Wiki_Reference.*
+    SELECT *
     FROM  Initiated_Transaction, Referred, Identified, Wiki_Reference
     WHERE Initiated_Transaction.session_id = (SELECT session_id FROM SessionInfo)
     AND Referred.transaction_id = Initiated_Transaction.transaction_id
