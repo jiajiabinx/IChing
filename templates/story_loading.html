@@ -82,11 +82,11 @@
         const sessionId = urlParams.get('session_id');
 
         const API_ENDPOINTS = {
-            qigua: `${BASE_URL}/api/story/yunsuan`,
-            duangua: `${BASE_URL}/api/story/tuisuan`,
-            story: `${BASE_URL}/api/story`,
-            display_story: `${BASE_URL}/story`,
-            dashboard: `${BASE_URL}/dashboard`,
+            qigua: `/api/story/yunsuan`,
+            duangua: `/api/story/tuisuan`,
+            story: `/api/story`,
+            display_story: `/story`,
+            dashboard: `/dashboard`,
         };
         if (!orderId || !userId || !sessionId) {
             alert('No payment token found');
