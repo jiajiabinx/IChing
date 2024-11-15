@@ -11,7 +11,7 @@
             padding: 20px;
         }
         .dashboard {
-            background: white;
+            background: transparent;
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -51,10 +51,7 @@
             display: none;
         }
         .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
+            display: block;
         }
 
         .section {
@@ -104,11 +101,57 @@
             padding: 15px;
             border-radius: 6px;
             margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .story-card p {
             margin: 10px 0;
             line-height: 1.5;
+        }
+
+        .dashboard-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .sidebar {
+            flex: 0 0 30%;
+        }
+
+        .main-content {
+            flex: 0 0 70%;
+            width: 100%;
+            max-width: 70%;
+        }
+
+        .story-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        #historyList {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        #historyList li {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .read-more {
+            color: #007bff;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .read-more:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -120,33 +163,39 @@
             Generate New Story
         </button>
 
-        <div class="dashboard-grid">
-            <div class="section full-width" id="userInfo">
-                <h3>User Information</h3>
-                <button id="editButton" class="edit-button">Edit Information</button>
-                <div id="userDetails"></div>
-                <form id="userForm" class="hidden">
-                    <!-- Form fields will be dynamically populated -->
-                </form>
-                <div class="error-message" id="userError"></div>
+        <div class="dashboard-container">
+            <div class="sidebar">
+                <div class="section" id="userInfo">
+                    <h3>User Information</h3>
+                    <button id="editButton" class="edit-button">Edit Information</button>
+                    <div id="userDetails"></div>
+                    <form id="userForm" class="hidden">
+                        <!-- Form fields will be dynamically populated -->
+                    </form>
+                    <div class="error-message" id="userError"></div>
+                </div>
+
+                <div class="section" id="friends">
+                    <h3>Your Friends</h3>
+                    <ul id="friendsList"></ul>
+                    <div class="error-message" id="friendsError"></div>
+                </div>
+
+                <div class="section" id="discover">
+                    <h3>Discover Friends</h3>
+                    <ul id="discoverList"></ul>
+                    <div class="error-message" id="discoverError"></div>
+                </div>
             </div>
 
-            <div class="section" id="history">
-                <h3>Your Story History</h3>
-                <ul id="historyList"></ul>
-                <div class="error-message" id="historyError"></div>
-            </div>
-
-            <div class="section" id="friends">
-                <h3>Your Friends</h3>
-                <ul id="friendsList"></ul>
-                <div class="error-message" id="friendsError"></div>
-            </div>
-
-            <div class="section" id="discover">
-                <h3>Discover Friends</h3>
-                <ul id="discoverList"></ul>
-                <div class="error-message" id="discoverError"></div>
+            <div class="main-content">
+                <div class="section" id="history">
+                    <h3>Your Story History</h3>
+                    <div class="story-grid">
+                        <ul id="historyList"></ul>
+                    </div>
+                    <div class="error-message" id="historyError"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -289,12 +338,21 @@
                 historyList.innerHTML = '<li>No stories found</li>';
                 return;
             }
-            historyList.innerHTML = stories.map(story => `
-                <li class="story-card">
-                    <strong>Story #${story.story_id}</strong>
-                    <p>${story.generated_story_text}</p>
-                </li>
-            `).join('');
+            
+            historyList.innerHTML = stories.map(story => {
+                // Limit the story text to approximately 200 words
+                const words = story.generated_story_text.split(' ');
+                const limitedText = words.slice(0, 200).join(' ');
+                const hasMore = words.length > 200;
+                
+                return `
+                    <li class="story-card">
+                        <strong>Story #${story.story_id}</strong>
+                        <p>${limitedText}${hasMore ? '...' : ''}</p>
+                        <a href="/story/${story.story_id}?user_id=${userId}" class="read-more">Read full story</a>
+                    </li>
+                `;
+            }).join('');
         }
 
         function displayFriends(friends) {

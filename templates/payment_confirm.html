@@ -42,7 +42,7 @@
     <div class="payment-box">
         <h2>Amount to Pay</h2>
         <div class="amount">${{ amount }}</div>
-        <button onclick="confirmPayment()">Confirm Payment</button>
+        <button id="confirmButton" class="payment-button">Confirm Payment</button>
     </div>
 
     <script>
@@ -50,18 +50,20 @@
         const BASE_URL = '{{ base_url }}';
         const API_ENDPOINTS = {
             payment: `${BASE_URL}/api/payments/confirm`,
+            story: `${BASE_URL}/story_loading`,
         };
 
         // Get parameters from URL
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order_id');
         const userId = urlParams.get('user_id');
-        const amount = urlParams.get('amount');
 
         async function confirmPayment() {
             try {
+
                 // Directly confirm payment without creating a separate session
                 const paymentResponse = await fetch(API_ENDPOINTS.payment, {
+
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -77,20 +79,17 @@
                 }
 
                 const paymentData = await paymentResponse.json();
+                
 
-                // Redirect based on response
-                if (paymentData.redirect_url) {
-                    window.location.href = paymentData.redirect_url;
-                } else {
-                    // Default success redirect
-                    window.location.href = `/story?order_id=${orderId}&user_id=${userId}&session_id=${paymentData.session_id}`;
-                }
-
+                window.location.href = `/story?order_id=${orderId}&user_id=${userId}&session_id=${paymentData.session_id}`;
             } catch (error) {
                 console.error('Error:', error);
                 alert('Payment processing failed. Please try again.');
             }
         }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('confirmButton').addEventListener('click', confirmPayment);
+        });
     </script>
 </body>
 </html>
