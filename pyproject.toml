@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "iching"
+name = "IChing"
 version = "0.1.0"
 description = "AI Fortune Teller"
 authors = ["jiajiabinx"]
