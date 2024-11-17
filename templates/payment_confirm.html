@@ -46,14 +46,14 @@
     </div>
 
     <script>
-        // Global configuration
+        
         const BASE_URL = '{{ base_url }}';
         const API_ENDPOINTS = {
             payment: `/api/payments/confirm`,
             story: `/story_loading`,
         };
 
-        // Get parameters from URL
+        
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order_id');
         const userId = urlParams.get('user_id');
@@ -61,7 +61,7 @@
         async function confirmPayment() {
             try {
 
-                // Directly confirm payment without creating a separate session
+                
                 const paymentResponse = await fetch(API_ENDPOINTS.payment, {
 
                     method: 'POST',

@@ -384,9 +384,9 @@
                 `Error: ${error.message || 'Something went wrong'}`;
         }
 
-        // Fetch all data when the page loads
+        
         window.onload = () => {
-            console.log('Loading dashboard data...');  // Debug log
+            console.log('Loading dashboard data...');  
             fetchUserInfo();
             fetchStoryHistory();
             fetchFriends();
@@ -401,7 +401,7 @@
 
                 try {
                     const response = await fetch(`${API_ENDPOINTS.user}/${userId}`, {
-                        method: 'PUT', // Ensure we use PUT since we updated the endpoint
+                        method: 'PUT', 
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -410,10 +410,10 @@
                     
                     if (!response.ok) throw new Error('Failed to update user info');
                     
-                    // Fetch and display updated user data
+                   
                     await fetchUserInfo();
                     
-                    toggleEdit();  // Close the form and show updated info
+                    toggleEdit();  
                 } catch (error) {
                     document.getElementById('userError').textContent = error.message;
                 }

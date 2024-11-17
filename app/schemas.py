@@ -1,8 +1,6 @@
 from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import date, datetime
-#from pydantic.validators import strict_datetime_validator, strict_date_validator
-#Commented out because they are not used, and causing trouble with import
 
 
 class IChingBaseModel(BaseModel):

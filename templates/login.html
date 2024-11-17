@@ -100,14 +100,14 @@
         }
 
         .loading {
-            display: none;  /* Hide by default */
+            display: none;
             text-align: center;
             margin-top: 10px;
             color: #666;
         }
 
         .loading.active {
-            display: block;  /* Show only when active class is added */
+            display: block;
         }
     </style>
 </head>
@@ -116,7 +116,7 @@
         <h1>Welcome to IChing</h1>
         
         <div class="auth-container">
-            <!-- Login Form -->
+           
             <div class="auth-box" id="loginBox">
                 <h2>Login</h2>
                 <form id="loginForm" onsubmit="handleLogin(event)">
@@ -129,7 +129,7 @@
                 </form>
             </div>
 
-            <!-- Signup Form -->
+            
             <div class="auth-box" id="signupBox">
                 <h2>Sign Up</h2>
                 <form id="signupForm" onsubmit="handleSignup(event)">
@@ -224,22 +224,22 @@
 
                 
                 if (response.ok) {
-                    const data = await response.json();  // Parse the JSON response
-                console.log('Login response data:', data);  // Debug log
+                    const data = await response.json(); 
+                console.log('Login response data:', data);  
 
                     if (data.redirect_url) {
-                        console.log('Redirecting to:', data.redirect_url);  // Debug log
-                        window.location.href = data.redirect_url;  // Redirect to the URL
+                        console.log('Redirecting to:', data.redirect_url); 
+                        window.location.href = data.redirect_url; 
                     } else {
-                        errorElement.textContent = 'No redirect URL provided';  // Handle missing redirect URL
+                        errorElement.textContent = 'No redirect URL provided';  
                     }
                 } else {
-                    const error = await response.json();  // Parse error response
-                    errorElement.textContent = error.detail || 'Login failed';  // Display error message
+                    const error = await response.json();  
+                    errorElement.textContent = error.detail || 'Login failed';  
                 }
             } catch (error) {
-                console.error('Login error:', error);  // Log any errors
-                errorElement.textContent = 'An error occurred. Please try again.';  // Display generic error message
+                console.error('Login error:', error); 
+                errorElement.textContent = 'An error occurred. Please try again.'; 
             }
         }
 
@@ -248,19 +248,19 @@
             const loadingIndicator = document.getElementById('signupLoading');
             const errorElement = document.getElementById('signupError');
             
-            // Clear any previous error
+            
             errorElement.textContent = '';
             
-            // Show loading indicator
+           
             loadingIndicator.classList.add('active');
             
             const formData = new FormData(event.target);
             const data = Object.fromEntries(formData.entries());
             
-            // Convert parental_income to integer
+            
             data.parental_income = parseInt(data.parental_income);
             
-            // Validate birth date
+           
             const birthDate = new Date(data.birth_date);
             const today = new Date();
             if (birthDate > today) {
@@ -289,7 +289,7 @@
             } catch (error) {
                 errorElement.textContent = 'An error occurred. Please try again.';
             } finally {
-                // Hide loading indicator when done
+                
                 loadingIndicator.classList.remove('active');
             }
         }
